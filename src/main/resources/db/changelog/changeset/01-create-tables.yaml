@@ -1,0 +1,130 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Oleksandr Marchenko
+      changes:
+        - createTable:
+            tableName: parking_lot
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: parking_lot
+            columnNames: name
+            constraintName: UK_PARKING_LOT_NAME
+
+        - createTable:
+            tableName: levels
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: floor_number
+                  type: int
+              - column:
+                  name: parking_lot_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_level_parking_lot
+                    referencedTableName: parking_lot
+                    referencedColumnNames: id
+
+        - addUniqueConstraint:
+            tableName: levels
+            columnNames: parking_lot_id, floor_number
+            constraintName: UK_LEVEL_PARKING_LOT_FLOOR
+
+        - createTable:
+            tableName: slots
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: slot_number
+                  type: varchar(10)
+              - column:
+                  name: type
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_available
+                  type: boolean
+                  defaultValueBoolean: true
+              - column:
+                  name: level_id
+                  type: bigint
+                  constraints:
+                    foreignKeyName: fk_slot_level
+                    referencedTableName: levels
+                    referencedColumnNames: id
+
+        - addUniqueConstraint:
+            tableName: slots
+            columnNames: level_id, slot_number
+            constraintName: UK_SLOT_LEVEL_NUMBER
+
+        - createTable:
+            tableName: vehicles
+            columns:
+              - column:
+                  name: license_plate
+                  type: varchar(20)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: vehicle_type_id
+                  type: varchar(31)
+
+        - createTable:
+            tableName: parking_tickets
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: entry_time
+                  type: timestamp(0)
+              - column:
+                  name: exit_time
+                  type: timestamp(0)
+              - column:
+                  name: fee
+                  type: decimal(19,2)
+              - column:
+                  name: vehicle_plate
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_ticket_vehicle
+                    referencedTableName: vehicles
+                    referencedColumnNames: license_plate
+              - column:
+                  name: slot_id
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_ticket_slot
+                    referencedTableName: slots
+                    referencedColumnNames: id

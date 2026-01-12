@@ -1,0 +1,90 @@
+databaseChangeLog:
+  - changeSet:
+      id: 2
+      author: Oleksandr Marchenko
+      changes:
+        - insert:
+            tableName: parking_lot
+            columns:
+              - column:
+                  name: name
+                  value: 'Central Plaza Parking'
+
+        - insert:
+            tableName: levels
+            columns:
+              - column:
+                  name: floor_number
+                  valueNumeric: 1
+              - column:
+                  name: parking_lot_id
+                  valueNumeric: 1
+
+        - insert:
+            tableName: levels
+            columns:
+              - column:
+                  name: floor_number
+                  valueNumeric: 2
+              - column:
+                  name: parking_lot_id
+                  valueNumeric: 1
+
+        - insert:
+            tableName: slots
+            columns:
+              - column:
+                  name: slot_number
+                  value: 'A1'
+              - column:
+                  name: level_id
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: 'COMPACT'
+
+        - insert:
+            tableName: slots
+            columns:
+              - column:
+                  name: slot_number
+                  value: 'A2'
+              - column:
+                  name: level_id
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: 'LARGE'
+
+        - insert:
+            tableName: slots
+            columns:
+              - column:
+                  name: slot_number
+                  value: 'B1'
+              - column:
+                  name: level_id
+                  valueNumeric: 2
+              - column:
+                  name: type
+                  value: 'MOTORCYCLE'
+
+        - insert:
+            tableName: vehicles
+            columns:
+              - column:
+                  name: license_plate
+                  value: 'AA1111BB'
+              - column:
+                  name: vehicle_type_id
+                  value: 'CAR'
+
+        - insert:
+            tableName: vehicles
+            columns:
+              - column:
+                  name: license_plate
+                  value: 'MOT-001'
+              - column:
+                  name: vehicle_type_id
+                  value: 'MOTORCYCLE'
