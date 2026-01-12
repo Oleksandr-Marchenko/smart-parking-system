@@ -6,8 +6,7 @@ import com.dev.marchenko.domain.ticket.ParkingTicket;
 import com.dev.marchenko.domain.vehicle.*;
 import com.dev.marchenko.dto.CheckOutResponse;
 import com.dev.marchenko.dto.TicketResponse;
-import com.dev.marchenko.exception.NoAvailableSlotException;
-import com.dev.marchenko.exception.TicketNotFoundException;
+import com.dev.marchenko.exception.*;
 import com.dev.marchenko.factory.VehicleFactory;
 import com.dev.marchenko.mapper.ParkingMapper;
 import com.dev.marchenko.repository.SlotRepository;
@@ -45,11 +44,11 @@ public class ParkingService {
                 .orElseGet(() -> vehicleRepository.save(VehicleFactory.createVehicle(licensePlate, type)));
 
         if (!isInstanceValid(vehicle, type)) {
-            throw new IllegalArgumentException("License plate " + licensePlate + " is already registered as a different vehicle type");
+            throw new LicensePlateAlreadyRegisteredException(licensePlate);
         }
 
         if (ticketRepository.existsByVehicleAndExitTimeIsNull(vehicle)) {
-            throw new IllegalStateException("Vehicle is already parked");
+            throw new VehicleAlreadyParkedException(licensePlate);
         }
 
         List<SlotType> allowedTypes = COMPATIBILITY_MAP.get(type);
@@ -86,7 +85,7 @@ public class ParkingService {
                 .orElseThrow(() -> new TicketNotFoundException(ticketId));
 
         if (ticket.getExitTime() != null) {
-            throw new IllegalStateException("Ticket already closed");
+            throw new TicketAlreadyClosedException(ticketId);
         }
 
         ParkingSlot slot = ticket.getSlot();

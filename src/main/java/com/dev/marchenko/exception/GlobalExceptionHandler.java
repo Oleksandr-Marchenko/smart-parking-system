@@ -98,4 +98,19 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleNoAvailableSlot(NoAvailableSlotException ex) {
         return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
+
+    @ExceptionHandler(VehicleAlreadyParkedException.class)
+    public ResponseEntity<Object> handleVehicleAlreadyParked(VehicleAlreadyParkedException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(LicensePlateAlreadyRegisteredException.class)
+    public ResponseEntity<Object> handleLicensePlateAlreadyRegistered(LicensePlateAlreadyRegisteredException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
+    @ExceptionHandler(TicketAlreadyClosedException.class)
+    public ResponseEntity<Object> handleTicketAlreadyClosed(TicketAlreadyClosedException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
+    }
 }
