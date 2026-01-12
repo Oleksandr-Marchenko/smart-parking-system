@@ -7,9 +7,14 @@ import jakarta.persistence.Entity;
 @DiscriminatorValue("CAR")
 public class Car extends Vehicle {
     public Car(String licensePlate) {
-        super(licensePlate, VehicleType.CAR);
+        super(licensePlate);
     }
 
     public Car() {
+    }
+
+    @Override
+    public VehicleType getType() {
+        return VehicleType.CAR;
     }
 }

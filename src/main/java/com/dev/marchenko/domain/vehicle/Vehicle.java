@@ -18,12 +18,9 @@ public abstract class Vehicle {
     @Column(name = "license_plate", length = 20)
     private String licensePlate;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "type", insertable = false, updatable = false)
-    private VehicleType type;
-
-    protected Vehicle(String licensePlate, VehicleType type) {
+    protected Vehicle(String licensePlate) {
         this.licensePlate = licensePlate;
-        this.type = type;
     }
+
+    public abstract VehicleType getType();
 }

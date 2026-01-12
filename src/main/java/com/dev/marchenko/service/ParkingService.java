@@ -3,8 +3,7 @@ package com.dev.marchenko.service;
 import com.dev.marchenko.domain.slot.ParkingSlot;
 import com.dev.marchenko.domain.slot.SlotType;
 import com.dev.marchenko.domain.ticket.ParkingTicket;
-import com.dev.marchenko.domain.vehicle.Vehicle;
-import com.dev.marchenko.domain.vehicle.VehicleType;
+import com.dev.marchenko.domain.vehicle.*;
 import com.dev.marchenko.dto.CheckOutResponse;
 import com.dev.marchenko.dto.TicketResponse;
 import com.dev.marchenko.exception.NoAvailableSlotException;
@@ -45,8 +44,8 @@ public class ParkingService {
         Vehicle vehicle = vehicleRepository.findById(licensePlate)
                 .orElseGet(() -> vehicleRepository.save(VehicleFactory.createVehicle(licensePlate, type)));
 
-        if (!vehicle.getType().equals(type)) {
-            throw new IllegalArgumentException("Vehicle type mismatch for license plate: " + licensePlate);
+        if (!isInstanceValid(vehicle, type)) {
+            throw new IllegalArgumentException("License plate " + licensePlate + " is already registered as a different vehicle type");
         }
 
         if (ticketRepository.existsByVehicleAndExitTimeIsNull(vehicle)) {
@@ -54,11 +53,12 @@ public class ParkingService {
         }
 
         List<SlotType> allowedTypes = COMPATIBILITY_MAP.get(type);
+
         ParkingSlot slot = allowedTypes.stream()
                 .map(slotRepository::findFirstByIsAvailableTrueAndTypeOrderByLevelFloorNumberAsc)
                 .flatMap(Optional::stream)
                 .findFirst()
-                .orElseThrow(() -> new NoAvailableSlotException("No available slots for " + type));
+                .orElseThrow(() -> new NoAvailableSlotException(type.name()));
 
         slot.setAvailable(false);
         slotRepository.save(slot);
@@ -109,6 +109,14 @@ public class ParkingService {
         return ticketRepository.findAllByExitTimeIsNull().stream()
                 .map(parkingMapper::toTicketResponse)
                 .toList();
+    }
+
+    private boolean isInstanceValid(Vehicle vehicle, VehicleType type) {
+        return switch (type) {
+            case CAR -> vehicle instanceof Car;
+            case TRUCK -> vehicle instanceof Truck;
+            case MOTORCYCLE -> vehicle instanceof Motorcycle;
+        };
     }
 
 }

@@ -4,6 +4,5 @@ public record SlotResponse(
         Long id,
         String slotNumber,
         String type,
-        boolean isOccupied,
         boolean isAvailable
 ) {}

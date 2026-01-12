@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Entity
 @Data
+@Table(name = "slots")
 public class ParkingSlot {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

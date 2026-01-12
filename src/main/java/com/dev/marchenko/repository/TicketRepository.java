@@ -14,4 +14,6 @@ public interface TicketRepository extends JpaRepository<ParkingTicket, Long> {
     boolean existsByVehicleAndExitTimeIsNull(Vehicle vehicle);
 
     List<ParkingTicket> findAllByExitTimeIsNull();
+
+    boolean existsBySlotIdAndExitTimeIsNull(Long slotId);
 }

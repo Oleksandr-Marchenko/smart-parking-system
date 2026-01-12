@@ -27,6 +27,7 @@ public class ParkingTicket {
     private LocalDateTime entryTime;
 
     private LocalDateTime exitTime;
+
     private BigDecimal fee;
 
     public Integer getLevelNumber() {

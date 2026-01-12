@@ -11,6 +11,7 @@ import com.dev.marchenko.factory.SlotFactory;
 import com.dev.marchenko.repository.LevelRepository;
 import com.dev.marchenko.repository.ParkingLotRepository;
 import com.dev.marchenko.repository.SlotRepository;
+import com.dev.marchenko.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class AdminService {
     private final LevelRepository levelRepository;
     private final SlotRepository slotRepository;
     private final SlotFactory slotFactory;
+    private final TicketRepository ticketRepository;
 
     @Transactional
     public ParkingLot createLot(ParkingLotRequest request) {
@@ -87,8 +89,8 @@ public class AdminService {
         ParkingSlot slot = slotRepository.findById(slotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Slot", slotId));
 
-        if (slot.isAvailable() && !isAvailable) {
-            throw new IllegalStateException("Cannot mark an occupied slot as unavailable for maintenance.");
+        if (!isAvailable && ticketRepository.existsBySlotIdAndExitTimeIsNull(slotId)) {
+            throw new IllegalStateException("Cannot mark slot as unavailable: it is currently occupied by a vehicle.");
         }
 
         slot.setAvailable(isAvailable);
