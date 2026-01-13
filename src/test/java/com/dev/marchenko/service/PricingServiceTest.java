@@ -27,7 +27,7 @@ public class PricingServiceTest {
 
     @BeforeEach
     void setUp() {
-        when(strategy.getVehicleType()).thenReturn(VehicleType.CAR);
+        when(strategy.getSupportedVehicleTypes()).thenReturn(List.of(VehicleType.CAR));
         pricingService = new PricingService(List.of(strategy));
     }
 
