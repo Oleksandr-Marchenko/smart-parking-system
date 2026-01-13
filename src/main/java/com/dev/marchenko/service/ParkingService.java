@@ -39,7 +39,7 @@ public class ParkingService {
     );
 
     @Transactional
-    public TicketResponse checkIn(String licensePlate, VehicleType type) {
+    public ParkingTicket checkIn(String licensePlate, VehicleType type, boolean isHandicapped) {
         Vehicle vehicle = vehicleRepository.findById(licensePlate)
                 .orElseGet(() -> vehicleRepository.save(VehicleFactory.createVehicle(licensePlate, type)));
 
@@ -51,13 +51,7 @@ public class ParkingService {
             throw new VehicleAlreadyParkedException(licensePlate);
         }
 
-        List<SlotType> allowedTypes = COMPATIBILITY_MAP.get(type);
-
-        ParkingSlot slot = allowedTypes.stream()
-                .map(slotRepository::findFirstByAvailableTrueAndTypeOrderByLevelFloorNumberAsc)
-                .flatMap(Optional::stream)
-                .findFirst()
-                .orElseThrow(() -> new NoAvailableSlotException(type.name()));
+        ParkingSlot slot = findAvailableSlot(type, isHandicapped);
 
         slot.setAvailable(false);
         slotRepository.save(slot);
@@ -67,20 +61,11 @@ public class ParkingService {
         ticket.setSlot(slot);
         ticket.setEntryTime(LocalDateTime.now());
 
-        ParkingTicket savedTicket = ticketRepository.save(ticket);
-
-        return TicketResponse.builder()
-                .ticketId(savedTicket.getId())
-                .licensePlate(vehicle.getLicensePlate())
-                .vehicleType(vehicle.getType().name())
-                .entryTime(savedTicket.getEntryTime())
-                .slotNumber(slot.getSlotNumber())
-                .levelFloor(slot.getLevel().getFloorNumber())
-                .build();
+        return ticketRepository.save(ticket);
     }
 
     @Transactional
-    public CheckOutResponse checkOut(Long ticketId) {
+    public ParkingTicket checkOut(Long ticketId) {
         ParkingTicket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new TicketNotFoundException(ticketId));
 
@@ -99,15 +84,33 @@ public class ParkingService {
                 ticket.getExitTime()
         );
         ticket.setFee(fee);
-        ticketRepository.save(ticket);
 
-        return parkingMapper.toCheckOutResponse(ticket);
+        return ticketRepository.save(ticket);
     }
 
-    public List<TicketResponse> getActiveSessions() {
-        return ticketRepository.findAllByExitTimeIsNull().stream()
-                .map(parkingMapper::toTicketResponse)
-                .toList();
+    public List<ParkingTicket> getActiveSessions() {
+        return ticketRepository.findAllByExitTimeIsNull();
+    }
+
+    private ParkingSlot findAvailableSlot(VehicleType vehicleType, boolean isHandicapped) {
+        if (isHandicapped) {
+            Optional<ParkingSlot> handicappedSlot = slotRepository
+                    .findFirstByAvailableTrueAndTypeOrderByLevelFloorNumberAsc(SlotType.HANDICAPPED);
+
+            if (handicappedSlot.isPresent()) {
+                return handicappedSlot.get();
+            }
+        }
+
+        List<SlotType> allowedTypes = COMPATIBILITY_MAP.get(vehicleType);
+
+        return allowedTypes.stream()
+                .map(slotRepository::findFirstByAvailableTrueAndTypeOrderByLevelFloorNumberAsc)
+                .flatMap(Optional::stream)
+                .findFirst()
+                .orElseThrow(() -> new NoAvailableSlotException(
+                        isHandicapped ? "HANDICAPPED or REGULAR " + vehicleType : vehicleType.name()
+                ));
     }
 
     private boolean isInstanceValid(Vehicle vehicle, VehicleType type) {

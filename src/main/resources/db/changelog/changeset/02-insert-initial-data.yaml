@@ -70,6 +70,19 @@ databaseChangeLog:
                   value: 'MOTORCYCLE'
 
         - insert:
+            tableName: slots
+            columns:
+              - column:
+                  name: slot_number
+                  value: 'B2'
+              - column:
+                  name: level_id
+                  valueNumeric: 1
+              - column:
+                  name: type
+                  value: 'HANDICAPPED'
+
+        - insert:
             tableName: vehicles
             columns:
               - column:
@@ -77,7 +90,7 @@ databaseChangeLog:
                   value: 'AA1111BB'
               - column:
                   name: vehicle_type_id
-                  value: 'CAR'
+                  value: 'COMPACT'
 
         - insert:
             tableName: vehicles

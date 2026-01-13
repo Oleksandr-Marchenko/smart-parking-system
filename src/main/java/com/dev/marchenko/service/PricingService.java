@@ -9,6 +9,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -18,7 +19,7 @@ public class PricingService {
 
     public PricingService(List<PricingStrategy> strategyList) {
         this.strategies = strategyList.stream()
-                .collect(Collectors.toMap(PricingStrategy::getVehicleType, s -> s));
+                .collect(Collectors.toMap(PricingStrategy::getVehicleType, Function.identity()));
     }
 
     public BigDecimal calculate(VehicleType type, LocalDateTime entry, LocalDateTime exit) {
@@ -28,14 +29,11 @@ public class PricingService {
 
         long minutes = Duration.between(entry, exit).toMinutes();
 
-        if (minutes == 0 && !entry.equals(exit)) {
-            minutes = 1;
-        }
-
-        if (!strategies.containsKey(type)) {
+        PricingStrategy strategy = strategies.get(type);
+        if (strategy == null) {
             throw new IllegalArgumentException("No pricing strategy found for " + type);
         }
 
-        return strategies.get(type).calculateFee(minutes);
+        return strategy.calculateFee(minutes);
     }
 }

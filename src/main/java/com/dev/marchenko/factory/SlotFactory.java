@@ -9,12 +9,16 @@ import org.springframework.stereotype.Component;
 public class SlotFactory {
 
     public ParkingSlot createSlot(String slotNumber, SlotType type, Level level) {
-        ParkingSlot slot = new ParkingSlot();
-        slot.setSlotNumber(slotNumber);
-        slot.setType(type);
-        slot.setLevel(level);
-        slot.setAvailable(true);
+        if (slotNumber == null || slotNumber.isBlank()) {
+            throw new IllegalArgumentException("slotNumber cannot be null or blank");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("SlotType cannot be null");
+        }
+        if (level == null) {
+            throw new IllegalArgumentException("Level cannot be null");
+        }
 
-        return slot;
+        return new ParkingSlot(slotNumber, type, level);
     }
 }

@@ -6,11 +6,10 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 
 @Component
-public class CarPricingStrategy implements PricingStrategy {
+public class CarPricingStrategy extends HourlyPricingStrategy {
     @Override
-    public BigDecimal calculateFee(long minutes) {
-        double hours = Math.ceil(minutes / 60.0);
-        return BigDecimal.valueOf(hours * 2.0);
+    protected BigDecimal getRate() {
+        return BigDecimal.valueOf(2);
     }
 
     @Override
