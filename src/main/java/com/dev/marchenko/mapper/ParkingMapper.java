@@ -31,6 +31,7 @@ public interface ParkingMapper {
     @Mapping(target = "parkingLotId", source = "parkingLot.id")
     LevelResponse toLevelResponse(Level level);
 
+    @Mapping(target = "isAvailable", source = "available")
     SlotResponse toSlotResponse(ParkingSlot slot);
 
     default Long calculateDuration(ParkingTicket ticket) {

@@ -1,3 +1,8 @@
 package com.dev.marchenko.dto;
 
-public record ParkingLotRequest(String name) {}
+import jakarta.validation.constraints.NotBlank;
+
+public record ParkingLotRequest(
+        @NotBlank(message = "Name cannot be empty")
+        String name
+) {}

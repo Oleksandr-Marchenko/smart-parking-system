@@ -22,7 +22,15 @@ public class PricingService {
     }
 
     public BigDecimal calculate(VehicleType type, LocalDateTime entry, LocalDateTime exit) {
+        if (exit.isBefore(entry)) {
+            throw new IllegalArgumentException("Exit time must be after entry time");
+        }
+
         long minutes = Duration.between(entry, exit).toMinutes();
+
+        if (minutes == 0 && !entry.equals(exit)) {
+            minutes = 1;
+        }
 
         if (!strategies.containsKey(type)) {
             throw new IllegalArgumentException("No pricing strategy found for " + type);

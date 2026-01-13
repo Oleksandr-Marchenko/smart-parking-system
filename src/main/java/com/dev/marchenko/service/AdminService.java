@@ -33,11 +33,20 @@ public class AdminService {
     }
 
     @Transactional
-    public void removeLot(Long id) {
-        if (!lotRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Parking Lot", id);
+    public void removeLot(Long lotId) {
+        ParkingLot lot = lotRepository.findById(lotId)
+                .orElseThrow(() -> new ResourceNotFoundException("Parking Lot", lotId));
+
+        boolean hasTickets = lot.getLevels().stream()
+                .flatMap(level -> level.getSlots().stream())
+                .anyMatch(slot -> ticketRepository.existsBySlotIdAndExitTimeIsNull(slot.getId()));
+
+        if (hasTickets) {
+            throw new IllegalStateException(
+                    "Cannot delete parking lot: it contains slots with vehicles assigned."
+            );
         }
-        lotRepository.deleteById(id);
+        lotRepository.deleteById(lotId);
     }
 
     @Transactional
@@ -56,8 +65,14 @@ public class AdminService {
 
     @Transactional
     public void removeLevel(Long levelId) {
-        if (!levelRepository.existsById(levelId)) {
-            throw new ResourceNotFoundException("Level", levelId);
+        Level level = levelRepository.findById(levelId)
+                .orElseThrow(() -> new ResourceNotFoundException("Level", levelId));
+
+        boolean hasTickets = level.getSlots().stream()
+                .anyMatch(slot -> ticketRepository.existsBySlotIdAndExitTimeIsNull(slot.getId()));
+
+        if (hasTickets) {
+            throw new IllegalStateException("Cannot delete level: it contains slots with vehicles assigned.");
         }
 
         levelRepository.deleteById(levelId);
@@ -81,6 +96,10 @@ public class AdminService {
         if (!slotRepository.existsById(slotId)) {
             throw new ResourceNotFoundException("Slot", slotId);
         }
+        if (ticketRepository.existsBySlotIdAndExitTimeIsNull(slotId)) {
+            throw new IllegalStateException("Cannot delete slot: it is currently occupied by a vehicle.");
+        }
+
         slotRepository.deleteById(slotId);
     }
 

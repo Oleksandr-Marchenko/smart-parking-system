@@ -10,6 +10,6 @@ import java.util.Optional;
 @Repository
 public interface SlotRepository extends JpaRepository<ParkingSlot, Long> {
 
-    Optional<ParkingSlot> findFirstByIsAvailableTrueAndTypeOrderByLevelFloorNumberAsc(SlotType type);
+    Optional<ParkingSlot> findFirstByAvailableTrueAndTypeOrderByLevelFloorNumberAsc(SlotType type);
 
 }

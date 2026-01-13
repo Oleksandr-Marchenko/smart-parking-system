@@ -54,7 +54,7 @@ public class ParkingService {
         List<SlotType> allowedTypes = COMPATIBILITY_MAP.get(type);
 
         ParkingSlot slot = allowedTypes.stream()
-                .map(slotRepository::findFirstByIsAvailableTrueAndTypeOrderByLevelFloorNumberAsc)
+                .map(slotRepository::findFirstByAvailableTrueAndTypeOrderByLevelFloorNumberAsc)
                 .flatMap(Optional::stream)
                 .findFirst()
                 .orElseThrow(() -> new NoAvailableSlotException(type.name()));

@@ -17,7 +17,7 @@ public class ParkingSlot {
     @Enumerated(EnumType.STRING)
     private SlotType type;
 
-    private boolean isAvailable = true;
+    private boolean available = true;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "level_id")
