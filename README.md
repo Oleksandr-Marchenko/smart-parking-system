@@ -31,6 +31,7 @@ The system prioritizes floors closest to the entrance and selects slots based on
 
 * **Java 17**: Core programming language.
 * **Spring Boot 3.4+**: Primary framework for building the RESTful API and managing dependency injection.
+* **Spring WebMvc**: Used for building the RESTful web layer and handling HTTP requests/responses.
 * **Gradle**: Build automation tool and dependency management.
 * **Lombok**: Library used to reduce boilerplate code.
 * **Jakarta Validation**: Used for request body validation (e.g., `@Valid` in controllers).
@@ -115,17 +116,10 @@ The system prioritizes floors closest to the entrance and selects slots based on
 
 - **Request**:
 - - Path Variable: id (The unique identifier of the lot)
-  ```json
-  {
-    
-  }
-  ```
+
 #### Scenario 1: Successful Deletion
 - **Response (204 No Content):**:
-   ```json
-  {
-  }
-   ```
+
 #### Scenario 2: Failed Deletion (Occupied Slots)
 - **Response (400 Bad Request):**:
    ```json
@@ -166,19 +160,9 @@ The system prioritizes floors closest to the entrance and selects slots based on
 
 - **Request**:
 - - Path Variable: id (The unique identifier of the level)
-  ```json
-  {
-      
-  }
-  ```
 
 #### Scenario 1: Successful Deletion
 - **Response (204 No Content):**:
-   ```json
-  {
-      
-  }
-   ```
 
 #### Scenario 2: Failed Deletion (Level Occupied)
 - **Response (400 Bad Request):**:
@@ -224,11 +208,6 @@ The system prioritizes floors closest to the entrance and selects slots based on
 
 - **Request**:
 - - Path Variable: id (The unique identifier of the slot)
-  ```json
-  {
-      
-  }
-  ```
 
 #### Scenario 1: Successful Deletion
 - **Response (204 No Content):**:
@@ -258,11 +237,7 @@ The system prioritizes floors closest to the entrance and selects slots based on
 
 - **Request**:
 - - Path Variable: slotId (The unique identifier of the slot)
-  ```json
-  {
-      
-  }
-  ```
+
 - **Response (200 OK):**:
    ```json
   {
@@ -310,11 +285,6 @@ The system prioritizes floors closest to the entrance and selects slots based on
 
 - **Request**:
 - - Path Variable: ticketId (The unique identifier of the parking ticket)
-  ```json
-  {
-      
-  }
-  ```
 
 - **Response (200 OK):**:
    ```json
@@ -334,11 +304,6 @@ The system prioritizes floors closest to the entrance and selects slots based on
 <details>
 
 - **Request**:
-  ```json
-  {
-     
-  }
-  ```
 
 - **Response (201 Created):**:
    ```json
@@ -356,7 +321,7 @@ The system prioritizes floors closest to the entrance and selects slots based on
 
 </details>
 
-## ⚠️ Known Limitations & TODOs
+## Known Limitations & TODOs
 
 * **[ ] Handicapped Validation**: Implement a verification mechanism (e.g., `isHandicapped` flag in request) to ensure only authorized vehicles occupy **HANDICAPPED** slots.
 * **[ ] Persistence**: Replace in-memory storage with a persistent database like PostgreSQL for production use.
