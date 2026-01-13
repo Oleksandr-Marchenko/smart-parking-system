@@ -59,7 +59,8 @@ The system prioritizes floors closest to the entrance and selects slots based on
    ```bash
    ./gradlew bootRun
    ```
-   The server will be available at http://localhost:8080
+   The server will be available at http://localhost:8080  
+   You can import the included `Smart Parking System.postman_collection.json` file from the `postman` folder into Postman.
 - Running Tests
    ```bash
   ./gradlew clean test
@@ -79,11 +80,11 @@ The system prioritizes floors closest to the entrance and selects slots based on
 | PATCH  | /api/v1/admin/slots/:slotId/availability?available=true | - | Toggle slot availability |
 
 ### Parking Endpoints
-| Method | Endpoint | Request Body | Description |
-|--------|----------|--------------|-------------|
-| POST   | /api/v1/parking/check-in | {"licensePlate": "String", "vehicleType": "Enum"} | Check in vehicle |
-| POST   | /api/v1/parking/check-out/:ticketId | - | Check out vehicle by ticket |
-| GET    | /api/v1/parking/sessions | - | Get active sessions |
+| Method | Endpoint | Request Body                                                                  | Description |
+|--------|----------|-------------------------------------------------------------------------------|-------------|
+| POST   | /api/v1/parking/check-in | {"licensePlate": "String", "vehicleType": "Enum", isHandicapped(): "Boolean"} | Check in vehicle |
+| POST   | /api/v1/parking/check-out/:ticketId | -                                                                             | Check out vehicle by ticket |
+| GET    | /api/v1/parking/sessions | -                                                                             | Get active sessions |
 
 
 ## Example Payloads
@@ -260,7 +261,8 @@ The system prioritizes floors closest to the entrance and selects slots based on
   ```json
   {
       "licensePlate": "AA1234BE",
-      "vehicleType": "TRUCK"
+      "vehicleType": "TRUCK",
+      "isHandicapped": "false"
   }
   ```
 - - (Types: MOTORCYCLE, CAR, TRUCK)
@@ -323,7 +325,6 @@ The system prioritizes floors closest to the entrance and selects slots based on
 
 ## Known Limitations & TODOs
 
-* **[ ] Handicapped Validation**: Implement a verification mechanism (e.g., `isHandicapped` flag in request) to ensure only authorized vehicles occupy **HANDICAPPED** slots.
 * **[ ] Persistence**: Replace in-memory storage with a persistent database like PostgreSQL for production use.
 * **[ ] Security**: Implement Spring Security (JWT or OAuth2) to protect Admin endpoints.
 * **[ ] Concurrency**: Add database-level locking or synchronized mechanisms to handle high-frequency simultaneous check-ins and prevent double-booking.
