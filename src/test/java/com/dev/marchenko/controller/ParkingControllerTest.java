@@ -15,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -103,7 +102,7 @@ public class ParkingControllerTest {
                 .entryTime(now.minusHours(2))
                 .exitTime(now)
                 .durationMinutes(120L)
-                .totalFee(new BigDecimal("20.50"))
+                .totalFee("$20.50")
                 .build();
 
         when(parkingService.checkOut(ticketId)).thenReturn(mockTicket);
@@ -114,7 +113,7 @@ public class ParkingControllerTest {
                 .andExpect(jsonPath("$.licensePlate").value("AA1111BB"))
                 .andExpect(jsonPath("$.entryTime").value(matchesPattern("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")))
                 .andExpect(jsonPath("$.durationMinutes").value(120))
-                .andExpect(jsonPath("$.totalFee").value(20.50));
+                .andExpect(jsonPath("$.totalFee").value("$20.50"));
     }
 
     @Test

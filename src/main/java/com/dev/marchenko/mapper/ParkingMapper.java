@@ -11,10 +11,14 @@ import org.mapstruct.ReportingPolicy;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.NumberFormat;
 import java.time.Duration;
+import java.util.Locale;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface ParkingMapper {
+
+    NumberFormat CURRENCY_FORMATTER = NumberFormat.getCurrencyInstance(Locale.US);
 
     @Mapping(target = "ticketId", source = "id")
     @Mapping(target = "licensePlate", source = "vehicle.licensePlate")
@@ -25,11 +29,15 @@ public interface ParkingMapper {
 
     @Mapping(target = "licensePlate", source = "vehicle.licensePlate")
     @Mapping(target = "durationMinutes", expression = "java(calculateDuration(ticket))")
-    @Mapping(target = "totalFee", source = "fee")
+    @Mapping(target = "totalFee", expression = "java(formatToUsd(ticket.getFee()))")
     CheckOutResponse toCheckOutResponse(ParkingTicket ticket);
 
     default BigDecimal mapBigDecimal(BigDecimal value) {
         return value == null ? null : value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    default String formatToUsd(BigDecimal fee) {
+        return fee == null ? null : CURRENCY_FORMATTER.format(fee);
     }
 
     ParkingLotResponse toLotResponse(ParkingLot lot);
