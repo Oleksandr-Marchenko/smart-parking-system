@@ -9,6 +9,8 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -25,6 +27,10 @@ public interface ParkingMapper {
     @Mapping(target = "durationMinutes", expression = "java(calculateDuration(ticket))")
     @Mapping(target = "totalFee", source = "fee")
     CheckOutResponse toCheckOutResponse(ParkingTicket ticket);
+
+    default BigDecimal mapBigDecimal(BigDecimal value) {
+        return value == null ? null : value.setScale(2, RoundingMode.HALF_UP);
+    }
 
     ParkingLotResponse toLotResponse(ParkingLot lot);
 

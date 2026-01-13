@@ -4,8 +4,6 @@ import com.dev.marchenko.domain.slot.ParkingSlot;
 import com.dev.marchenko.domain.slot.SlotType;
 import com.dev.marchenko.domain.ticket.ParkingTicket;
 import com.dev.marchenko.domain.vehicle.*;
-import com.dev.marchenko.dto.CheckOutResponse;
-import com.dev.marchenko.dto.TicketResponse;
 import com.dev.marchenko.exception.*;
 import com.dev.marchenko.factory.VehicleFactory;
 import com.dev.marchenko.mapper.ParkingMapper;
