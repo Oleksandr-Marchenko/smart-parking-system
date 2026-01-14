@@ -55,13 +55,15 @@ The system prioritizes floors closest to the entrance and selects slots based on
    ```bash
    ./gradlew build
    ```
-3. Running the Application
+3. Running the Application  
+Before running tests, make sure Docker is running, as some services depend on it.
+   ./gradlew clean test
    ```bash
    ./gradlew bootRun
    ```
    The server will be available at http://localhost:8080  
    You can import the included `Smart Parking System.postman_collection.json` file from the `postman` folder into Postman.
-- Running Tests  
+- (Optional) Running Tests Separately  
   Before running tests, make sure Docker is running, as some services depend on it.
    ```bash
   ./gradlew clean test
