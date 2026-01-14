@@ -61,7 +61,8 @@ The system prioritizes floors closest to the entrance and selects slots based on
    ```
    The server will be available at http://localhost:8080  
    You can import the included `Smart Parking System.postman_collection.json` file from the `postman` folder into Postman.
-- Running Tests
+- Running Tests  
+  Before running tests, make sure Docker is running, as some services depend on it.
    ```bash
   ./gradlew clean test
    ```
