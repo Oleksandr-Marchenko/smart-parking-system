@@ -55,9 +55,7 @@ The system prioritizes floors closest to the entrance and selects slots based on
    ```bash
    ./gradlew build
    ```
-3. Running the Application  
-Before running tests, make sure Docker is running, as some services depend on it.
-   ./gradlew clean test
+3. Running the Application ( make sure Docker is running, as some services depend on it.)
    ```bash
    ./gradlew bootRun
    ```
