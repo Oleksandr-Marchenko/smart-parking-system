@@ -38,6 +38,12 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 }
 
-test {
+tasks.named('test') {
     useJUnitPlatform()
+    maxParallelForks = 1
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        exceptionFormat "full"
+    }
 }
