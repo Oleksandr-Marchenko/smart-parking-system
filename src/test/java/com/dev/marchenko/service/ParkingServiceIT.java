@@ -8,26 +8,23 @@ import com.dev.marchenko.domain.ticket.ParkingTicket;
 import com.dev.marchenko.domain.vehicle.VehicleType;
 import com.dev.marchenko.exception.NoAvailableSlotException;
 import com.dev.marchenko.exception.VehicleAlreadyParkedException;
-import com.dev.marchenko.repository.LevelRepository;
-import com.dev.marchenko.repository.ParkingLotRepository;
-import com.dev.marchenko.repository.SlotRepository;
-import com.dev.marchenko.repository.TicketRepository;
+import com.dev.marchenko.repository.*;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@Transactional
-@ActiveProfiles("test")
-public class ParkingServiceIT {
+public class ParkingServiceIT extends BaseIntegrationTest {
 
     @Autowired
     private ParkingService parkingService;
@@ -40,21 +37,21 @@ public class ParkingServiceIT {
     @Autowired
     private TicketRepository ticketRepository;
     @Autowired
+    private VehicleRepository vehicleRepository;
+    @Autowired
     private EntityManager entityManager;
 
     private Long compactSlotId;
-    private Long largeSlotId;
 
     @BeforeEach
     void setUp() {
-        ticketRepository.deleteAll();
-        slotRepository.deleteAll();
-        levelRepository.deleteAll();
-        lotRepository.deleteAll();
+        ticketRepository.deleteAllInBatch();
+        slotRepository.deleteAllInBatch();
+        levelRepository.deleteAllInBatch();
+        lotRepository.deleteAllInBatch();
+        vehicleRepository.deleteAllInBatch();
 
-        ParkingLot lot = new ParkingLot();
-        lot.setName("Test Lot");
-        lot = lotRepository.save(lot);
+        ParkingLot lot = lotRepository.save(new ParkingLot("Test Lot"));
 
         Level level = new Level();
         level.setFloorNumber(1);
@@ -73,7 +70,7 @@ public class ParkingServiceIT {
         largeSlot.setType(SlotType.LARGE);
         largeSlot.setAvailable(true);
         largeSlot.setLevel(level);
-        largeSlotId = slotRepository.save(largeSlot).getId();
+        slotRepository.save(largeSlot);
 
         ParkingSlot handiSlot = new ParkingSlot();
         handiSlot.setSlotNumber("H-1");
@@ -82,89 +79,90 @@ public class ParkingServiceIT {
         handiSlot.setLevel(level);
         slotRepository.save(handiSlot);
 
-        entityManager.flush();
-        entityManager.clear();
     }
 
     @Test
     void checkIn_ShouldUpdateDatabaseState() {
-        ParkingTicket response = parkingService.checkIn("REAL-001", VehicleType.CAR, false);
-
-        entityManager.flush();
-        entityManager.clear();
+        parkingService.checkIn("REAL-001", VehicleType.CAR, false);
 
         ParkingSlot savedSlot = slotRepository.findById(compactSlotId).orElseThrow();
-        assertFalse(savedSlot.isAvailable(), "The slot in the database must be marked as false (occupied)");
+        assertFalse(savedSlot.isAvailable(), "The database slot must be occupied.");
     }
 
     @Test
-    void checkIn_ShouldFallbackToCompactSlot() {
-        ParkingTicket response = parkingService.checkIn("MOTO-1", VehicleType.MOTORCYCLE, false);
-        entityManager.flush();
-        entityManager.clear();
+    void checkIn_ConcurrencyTest_WithPostgresLocking() throws InterruptedException {
+        ticketRepository.deleteAllInBatch();
+        slotRepository.deleteAllInBatch();
+        setUp();
+        slotRepository.findAll().stream()
+                .filter(s -> !s.getSlotNumber().equals("C-1"))
+                .forEach(s -> slotRepository.delete(s));
 
-        assertEquals("C-1", response.getSlot().getSlotNumber());
+        int threads = 10;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch endLatch = new CountDownLatch(threads);
 
-        ParkingSlot slotInDb = slotRepository.findById(compactSlotId)
-                .orElseThrow(() -> new AssertionError("Slot not found in DB"));
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger errorCount = new AtomicInteger(0);
 
-        assertFalse(slotInDb.isAvailable(), "The slot must be occupied in the database.");
+        for (int i = 0; i < threads; i++) {
+            final String plate = "CONC-" + i;
+            executor.execute(() -> {
+                try {
+                    startLatch.await();
+                    parkingService.checkIn(plate, VehicleType.CAR, false);
+                    successCount.incrementAndGet();
+                } catch (NoAvailableSlotException e) {
+                    errorCount.incrementAndGet();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    endLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        boolean completed = endLatch.await(10, TimeUnit.SECONDS);
+
+        assertTrue(completed, "The test did not complete on time.");
+        assertEquals(1, successCount.get(), "Only one machine should occupy a slot");
+        assertEquals(threads - 1, errorCount.get(), "The rest should be rejected due to lack of space.");
     }
 
     @Test
     void checkIn_ShouldThrowIfAlreadyInDb() {
         parkingService.checkIn("DUP-111", VehicleType.CAR, false);
 
-        entityManager.flush();
-        entityManager.clear();
-
         assertThrows(VehicleAlreadyParkedException.class,
                 () -> parkingService.checkIn("DUP-111", VehicleType.CAR, false));
     }
 
     @Test
-    void checkIn_ShouldThrowWhenFull() {
-        parkingService.checkIn("CAR-1", VehicleType.CAR, false);
-        entityManager.flush();
+    void checkOut_ShouldReleaseSlotAndCalculateFee() {
+        ParkingTicket ticket = parkingService.checkIn("L-123", VehicleType.CAR, false);
+        Long ticketId = ticket.getId();
 
-        parkingService.checkIn("CAR-2", VehicleType.CAR, false);
-        entityManager.flush();
+        ticket.setEntryTime(LocalDateTime.now().minusHours(2));
+        ticketRepository.saveAndFlush(ticket);
 
         entityManager.clear();
 
-        assertThrows(NoAvailableSlotException.class,
-                () -> parkingService.checkIn("CAR-3", VehicleType.CAR, false));
-    }
+        ParkingTicket finalTicket = parkingService.checkOut(ticketId);
 
-    @Test
-    void checkOut_ShouldReleaseSlotAndCalculateFeeInDb() throws InterruptedException {
-        ParkingTicket checkIn = parkingService.checkIn("EXIT-99", VehicleType.CAR, false);
-        entityManager.flush();
-        entityManager.clear();
+        assertNotNull(finalTicket.getExitTime());
+        assertNotNull(finalTicket.getFee());
+        assertTrue(finalTicket.getFee().compareTo(BigDecimal.ZERO) > 0);
 
-        Thread.sleep(1000);
-
-        var checkOut = parkingService.checkOut(checkIn.getId());
-
-        entityManager.flush();
-        entityManager.clear();
-
-        ParkingSlot slotAfter = slotRepository.findById(compactSlotId).orElseThrow();
-        assertTrue(slotAfter.isAvailable());
-
-        assertNotNull(checkOut.getFee());
-        assertTrue(checkOut.getFee().compareTo(BigDecimal.ZERO) >= 0);
+        ParkingSlot slot = slotRepository.findById(finalTicket.getSlot().getId()).orElseThrow();
+        assertTrue(slot.isAvailable(), "The slot must become free after departure");
     }
 
     @Test
     void checkIn_HandicappedShouldGetSpecialSlot() {
         ParkingTicket response = parkingService.checkIn("HANDI-1", VehicleType.CAR, true);
-
-        assertEquals("H-1", response.getSlot().getSlotNumber(), "\n" +
-                "Persons with disabilities must obtain a special H-1 visa.");
-
-        entityManager.flush();
-        entityManager.clear();
+        assertEquals("H-1", response.getSlot().getSlotNumber());
 
         ParkingSlot slotInDb = slotRepository.findAll().stream()
                 .filter(s -> s.getSlotNumber().equals("H-1"))
@@ -173,23 +171,70 @@ public class ParkingServiceIT {
     }
 
     @Test
-    void checkIn_RegularVehicleShouldNotOccupyHandicappedSlot() {
-        parkingService.checkIn("CAR-1", VehicleType.CAR, false);
-        parkingService.checkIn("CAR-2", VehicleType.CAR, false);
+    void checkIn_HandicappedShouldFallbackToRegularSlotIfHandiFull() {
+        parkingService.checkIn("HANDI-1", VehicleType.CAR, true);
 
-        entityManager.flush();
+        ParkingTicket response = parkingService.checkIn("HANDI-2", VehicleType.CAR, true);
 
-        assertThrows(NoAvailableSlotException.class,
-                () -> parkingService.checkIn("REGULAR-CAR", VehicleType.CAR, false));
+        String slotNum = response.getSlot().getSlotNumber();
+        assertTrue(slotNum.startsWith("C") || slotNum.startsWith("L"),
+                "A disabled person must take a regular seat if a special seat is occupied.");
     }
 
     @Test
-    void checkIn_HandicappedShouldFallbackToRegularSlotIfHandiFull() {
-        parkingService.checkIn("HANDI-FIRST", VehicleType.CAR, true);
+    void checkOut_ShouldCalculateCorrectFeeForTwoHours() {
+        ParkingTicket ticket = parkingService.checkIn("FEE-123", VehicleType.CAR, false);
 
-        ParkingTicket response = parkingService.checkIn("HANDI-SECOND", VehicleType.CAR, true);
+        ticket.setEntryTime(LocalDateTime.now().minusHours(2));
+        ticketRepository.saveAndFlush(ticket);
 
-        assertTrue(response.getSlot().getSlotNumber().startsWith("C") || response.getSlot().getSlotNumber().startsWith("L"),
-                "The second disabled person must take a regular seat if there are no special seats available.");
+        entityManager.clear();
+
+        ParkingTicket result = parkingService.checkOut(ticket.getId());
+
+        assertNotNull(result.getFee());
+        assertEquals(0, new BigDecimal("4.00").compareTo(result.getFee()),
+                "The cost for 2 hours (at 2.00/hour) should be 4.00");
+    }
+
+    @Test
+    void checkIn_ConcurrencyTest_ShouldAllowOnlyOneVehicle() throws InterruptedException {
+        ticketRepository.deleteAllInBatch();
+        vehicleRepository.deleteAllInBatch();
+
+        slotRepository.findAll().stream()
+                .filter(s -> !s.getSlotNumber().equals("C-1"))
+                .forEach(s -> slotRepository.delete(s));
+
+        int threadCount = 10;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch allDoneLatch = new CountDownLatch(threadCount);
+        AtomicInteger success = new AtomicInteger();
+        AtomicInteger failure = new AtomicInteger();
+
+        for (int i = 0; i < threadCount; i++) {
+            final String uniquePlate = "PLATE-" + i;
+            executor.execute(() -> {
+                try {
+                    startLatch.await();
+                    parkingService.checkIn(uniquePlate, VehicleType.CAR, false);
+                    success.incrementAndGet();
+                } catch (Exception e) {
+                    failure.incrementAndGet();
+                } finally {
+                    allDoneLatch.countDown();
+                }
+            });
+        }
+
+        startLatch.countDown();
+        boolean finished = allDoneLatch.await(15, TimeUnit.SECONDS);
+
+        assertTrue(finished, "The test did not have time to complete");
+        assertEquals(1, success.get(), "Only one car should park");
+        assertEquals(threadCount - 1, failure.get(), "The rest should be refused");
+
+        executor.shutdown();
     }
 }

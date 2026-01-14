@@ -41,7 +41,7 @@ public class ParkingService {
         Vehicle vehicle = vehicleRepository.findById(licensePlate)
                 .orElseGet(() -> vehicleRepository.save(VehicleFactory.createVehicle(licensePlate, type)));
 
-        if (!isInstanceValid(vehicle, type)) {
+        if (vehicle.getType() != type) {
             throw new LicensePlateAlreadyRegisteredException(licensePlate);
         }
 
@@ -50,9 +50,6 @@ public class ParkingService {
         }
 
         ParkingSlot slot = findAvailableSlot(type, isHandicapped);
-
-        slot.setAvailable(false);
-        slotRepository.save(slot);
 
         ParkingTicket ticket = new ParkingTicket();
         ticket.setVehicle(vehicle);
@@ -96,27 +93,22 @@ public class ParkingService {
                     .findFirstByAvailableTrueAndTypeOrderByLevelFloorNumberAsc(SlotType.HANDICAPPED);
 
             if (handicappedSlot.isPresent()) {
-                return handicappedSlot.get();
+                ParkingSlot slot = handicappedSlot.get();
+                slot.setAvailable(false);
+                return slotRepository.saveAndFlush(slot);
             }
         }
 
         List<SlotType> allowedTypes = COMPATIBILITY_MAP.get(vehicleType);
-
-        return allowedTypes.stream()
-                .map(slotRepository::findFirstByAvailableTrueAndTypeOrderByLevelFloorNumberAsc)
-                .flatMap(Optional::stream)
-                .findFirst()
-                .orElseThrow(() -> new NoAvailableSlotException(
-                        isHandicapped ? "HANDICAPPED or REGULAR " + vehicleType : vehicleType.name()
-                ));
-    }
-
-    private boolean isInstanceValid(Vehicle vehicle, VehicleType type) {
-        return switch (type) {
-            case CAR -> vehicle instanceof Car;
-            case TRUCK -> vehicle instanceof Truck;
-            case MOTORCYCLE -> vehicle instanceof Motorcycle;
-        };
+        for (SlotType type : allowedTypes) {
+            Optional<ParkingSlot> slotOpt = slotRepository.findFirstByAvailableTrueAndTypeOrderByLevelFloorNumberAsc(type);
+            if (slotOpt.isPresent()) {
+                ParkingSlot slot = slotOpt.get();
+                slot.setAvailable(false);
+                return slotRepository.saveAndFlush(slot);
+            }
+        }
+        throw new NoAvailableSlotException(vehicleType.name());
     }
 
 }

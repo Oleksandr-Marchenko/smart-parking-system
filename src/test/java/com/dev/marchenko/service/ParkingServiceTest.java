@@ -51,6 +51,11 @@ public class ParkingServiceTest {
         plate = "ABC-123";
         mockLevel = new Level();
         mockLevel.setFloorNumber(1);
+        org.mockito.Mockito.lenient().when(slotRepository.saveAndFlush(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        org.mockito.Mockito.lenient().when(ticketRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Nested
@@ -75,7 +80,7 @@ public class ParkingServiceTest {
             assertNotNull(result);
             assertEquals(plate, result.getVehicle().getLicensePlate());
             assertFalse(slot.isAvailable());
-            verify(slotRepository).save(slot);
+            verify(slotRepository).saveAndFlush(slot);
         }
 
         @Test
