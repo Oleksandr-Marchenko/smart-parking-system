@@ -5,20 +5,17 @@ import com.dev.marchenko.domain.lot.ParkingLot;
 import com.dev.marchenko.domain.slot.ParkingSlot;
 import com.dev.marchenko.domain.ticket.ParkingTicket;
 import com.dev.marchenko.dto.*;
+import com.dev.marchenko.formatter.MoneyFormatter;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.ReportingPolicy;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.NumberFormat;
 import java.time.Duration;
-import java.util.Locale;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE, uses = MoneyFormatter.class)
 public interface ParkingMapper {
-
-    NumberFormat CURRENCY_FORMATTER = NumberFormat.getCurrencyInstance(Locale.US);
 
     @Mapping(target = "ticketId", source = "id")
     @Mapping(target = "licensePlate", source = "vehicle.licensePlate")
@@ -29,15 +26,11 @@ public interface ParkingMapper {
 
     @Mapping(target = "licensePlate", source = "vehicle.licensePlate")
     @Mapping(target = "durationMinutes", expression = "java(calculateDuration(ticket))")
-    @Mapping(target = "totalFee", expression = "java(formatToUsd(ticket.getFee()))")
+    @Mapping(target = "totalFee", source = "fee")
     CheckOutResponse toCheckOutResponse(ParkingTicket ticket);
 
     default BigDecimal mapBigDecimal(BigDecimal value) {
         return value == null ? null : value.setScale(2, RoundingMode.HALF_UP);
-    }
-
-    default String formatToUsd(BigDecimal fee) {
-        return fee == null ? null : CURRENCY_FORMATTER.format(fee);
     }
 
     ParkingLotResponse toLotResponse(ParkingLot lot);

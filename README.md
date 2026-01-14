@@ -66,6 +66,23 @@ The system prioritizes floors closest to the entrance and selects slots based on
   ./gradlew clean test
    ```
 
+By default, the system uses the en-US locale (USD).
+You can change the locale in the application.yml file to adjust number formatting and currency symbols returned by the API:
+   ```bash
+      parking:
+        locale: en-US
+   ```
+-- Examples of supported locales and their formats for totalFee:
+
+| Locale | Example Output |
+|--------|----------|
+| en-US   | $1,234.56 |
+| de-DE   | 1.234,56 € |
+| fr-FR   | 1234,56 € |
+| ja-JP  | ￥1,235 |
+
+-- After updating the locale, restart the application. All API responses containing monetary values (e.g., totalFee) will reflect the new locale format.
+
 ## API Reference
 ### Admin Endpoints
 
@@ -328,3 +345,5 @@ The system prioritizes floors closest to the entrance and selects slots based on
 * **[ ] Persistence**: Replace in-memory storage with a persistent database like PostgreSQL for production use.
 * **[ ] Security**: Implement Spring Security (JWT or OAuth2) to protect Admin endpoints.
 * **[ ] Concurrency**: Add database-level locking or synchronized mechanisms to handle high-frequency simultaneous check-ins and prevent double-booking.
+* **[ ] Payment / Billing Integration**: Add real payment processing and invoicing logic for check-outs (currently fee calculation is simulated).
+* **[ ] Internationalization / Localization**: Extend locale support to messages, date/time formats, and multi-currency.
